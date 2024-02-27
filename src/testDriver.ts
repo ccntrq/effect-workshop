@@ -19,7 +19,7 @@ class TestLogs extends Context.Tag("TestLogs")<
   );
 }
 
-class Test extends Context.Tag("Test")<
+export class Test extends Context.Tag("Test")<
   Test,
   {
     logTest: (message: unknown) => Effect.Effect<void>;

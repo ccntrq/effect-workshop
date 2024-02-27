@@ -10,7 +10,7 @@ class Foo extends Context.Tag("Foo")<Foo, { readonly bar: string }>() {
 // Get the `Foo` service from context manually :)
 
 const test1 = Effect.gen(function* (_) {
-  const foo = { bar: "hint: look at Effect.context" };
+  const foo = yield* _(Effect.context<Foo>(), Effect.map(Context.get(Foo)));
   return foo.bar;
 }).pipe(Effect.provide(Foo.Live));
 
@@ -39,12 +39,17 @@ class Random extends Context.Tag("Random")<
 // Having to get the service, just to use a single property or function is a bit annoying
 // For convenience lets create Effects (or functions that return Effects) themselves already depend on the service
 
-declare const nextInt: Effect.Effect<number, never, Random>;
-declare const nextBool: Effect.Effect<boolean, never, Random>;
-declare const nextIntBetween: (
+const nextInt: Effect.Effect<number, never, Random> = Random.pipe(
+  Effect.flatMap(({ nextInt }) => nextInt)
+);
+const nextBool: Effect.Effect<boolean, never, Random> = Random.pipe(
+  Effect.flatMap(({ nextBool }) => nextBool)
+);
+const nextIntBetween = (
   min: number,
   max: number
-) => Effect.Effect<number, never, Random>;
+): Effect.Effect<number, never, Random> =>
+  Random.pipe(Effect.flatMap(({ nextIntBetween }) => nextIntBetween(min, max)));
 
 const test2 = Effect.gen(function* (_) {
   const int = yield* _(nextInt);

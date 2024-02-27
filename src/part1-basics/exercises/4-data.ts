@@ -1,4 +1,4 @@
-import { Effect, Equal, HashSet, Hash, Data, Brand } from "effect";
+import { Effect, Equal, HashSet, Hash, Data, Brand, pipe } from "effect";
 import assert from "node:assert";
 
 // Exercise 1
@@ -9,6 +9,20 @@ class Transaction implements Equal.Equal, Hash.Hash {
     public readonly amount: number,
     public readonly time: Date
   ) {}
+
+  [Equal.symbol](that: unknown) {
+    return (
+      that instanceof Transaction && that[Hash.symbol]() === this[Hash.symbol]()
+    );
+  }
+
+  [Hash.symbol]() {
+    return pipe(
+      Hash.string(this.id),
+      Hash.combine(Hash.number(this.amount)),
+      Hash.combine(Hash.number(this.time.getDate()))
+    );
+  }
 }
 
 assert(
@@ -27,14 +41,12 @@ assert(
 // Create a datatype for a string that has been guaranteed to be only ascii
 // Here is a regex for you to use : /^[\x00-\x7F]*$/
 
-type ASCIIString = never;
+type ASCIIString = string & Brand.Brand<"ASCIIString">;
 
-function takesOnlyAscii(s: ASCIIString) {
-  // ...
-}
+const ASCIIString = Brand.refined<ASCIIString>(
+  (s) => s.match(/^[\x00-\x7F]*$/) !== null,
+  (s) => Brand.error("Not ASCII")
+);
 
-const string1: ASCIIString = "hello";
-const string2: ASCIIString = "hello🌍";
-
-takesOnlyAscii(string1);
-takesOnlyAscii(string2);
+const string1: ASCIIString = ASCIIString("hello");
+const string2: ASCIIString = ASCIIString("hello🌍");
